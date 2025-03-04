@@ -112,7 +112,7 @@ if __name__ == "__main__" :
     K3 = 4 #[mm/sqrt(ans)]
     t = np.linspace(0,200,100) # [ans]
     w = 0.3 # [mm]
-    t_compact, t_fissure = find_ti_carbonatation(K1,50,0.3)
+    t_compact1, t_fissure1 = find_ti_carbonatation(K1,50,0.3)
     
     Clim = 0.4 # [%]
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
@@ -122,6 +122,11 @@ if __name__ == "__main__" :
     Cs = 0.15 # [%]
     x = 50 # [mm], pos[ition de l'armature (enrobage)
     Sm0 = 300 # [mm]
-    t_compact, t_fissure = find_ti_corrosion(50,Dce,Clim,Cs,w,Sm0)
+    t_compact2, t_fissure2 = find_ti_corrosion(50,Dce,Clim,Cs,w,Sm0)
+    
+    print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
+    
+    vcorr = 2 # [microm/ans] si seulement carbonatation
+    vcorr = 40 # [mm/ans] si carbonatation et corrosion
     
     
