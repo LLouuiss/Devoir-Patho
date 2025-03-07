@@ -36,17 +36,19 @@ def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2) :
     """ Fonction qui calcule la réduction de la section d'armature
         Ns : nombre de barres d'armature
         d0 : diamètre des barres d'armature (mm)
-        t0 : temps de début de corrosion (ans)
+        tcarbo : temps de carbonatation (ans)
+        tchlor : temps d'initiation chlorure (ans)
         t : temps (ans)
-        vcorr : vitesse de corrosion (mm/ans)
+        vcorr1 : vitesse de corrosion pour la carbonatation (mm/ans)
+        vcorr2 : vitesse de corrosion pour les chlorures (mm/ans)
     """
     As = np.zeros(len(t))
     if tcarbo < tchlor :
         t0 = tcarbo
-        print("Carbonatation")
+        print("Carbonatation Frist")
     else :
         t0 = tchlor
-        print("Chlorures")
+        print("Chlorures First")
     print(t)
     print(t0)
       
@@ -56,12 +58,12 @@ def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2) :
         if t[i] > t0 and t[i] < tchlor:
             As[i] =  Ns * np.pi * (d0 - 2*vcorr1*(t[i]-t0))**2 / 4
         if t[i] > t0 and t[i] >= tchlor :
-            As[i] =  Ns * np.pi * (d0 - 2*vcorr2*(t[i]-t0))**2 / 4
+            As[i] =  Ns * np.pi * (d0 - 2*vcorr2*(t[i]-tchlor))**2 / 4
     
     plt.plot(t,As,label="Section d'armature")
     plt.vlines(tcarbo,0,Ns * np.pi * d0**2 / 4,'red',linestyles='dashed',label="Temps de carbonatation")
     plt.text(tcarbo,-1000,str(int(round(t0,0))),color='red')
-    plt.vlines(tchlor,0,Ns * np.pi * (d0 - 2*vcorr2*(tchlor-t0))**2 / 4,'brown',linestyles='dashed',label="Chlorures + Carbonatation")
+    plt.vlines(tchlor,0,Ns * np.pi * (d0 - 2*vcorr1*(tchlor-t0))**2 / 4,'brown',linestyles='dashed',label="Chlorures + Carbonatation")
     plt.text(tchlor,-1000,str(int(round(tchlor,0))),color='brown')
     plt.xlabel("Temps [ans]")
     plt.ylabel("Section d'armature [mm^2]")
@@ -161,5 +163,6 @@ if __name__ == "__main__" :
     Ns_L = 17 # nombre de barres d'armature longitudinales
     d0_L = 40 # [mm] diamètre des barres d'armature longitudinales
     As_L = As_reduction(Ns_L,d0_L,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
-     
+    
+    #### ATTENTION POUR ETRIER ON VA DEVOIR DIVISER AS EN DEUX CAR FCT PREND EN COMPTE SEULEMENT UNE SECTION D'ARMATURE ####
     
