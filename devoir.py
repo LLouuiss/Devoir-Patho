@@ -53,16 +53,17 @@ def find_ti_carbonatation (K,e,w) :
     w : largeur de la fissure (mm)
     """
     # Béton compact
-    t_compact = (e/K) ** 2
+    t_compact = (e/K) ** 2 # [ans]
     # Béton fissuré
-    t_fissure = (e/(50 * np.sqrt(w)))**4
+    t_fissure = (e/(50 * np.sqrt(w)))**4 # [ans]
     # Plot
     plt.plot(t_compact,x_compact(K,t_compact),'or',markersize = 5,label="Temps d'initiation béton compacte")
-    plt.hlines(e,0,t_compact,'r',linestyles='dashed')
+    plt.hlines(e,0,max(t),'black',linestyles='dashed')
     plt.vlines(t_compact,0,e,'r',linestyles='dashed')
+    plt.text(t_compact,-5,str(int(round(t_compact,0))),color='r')
     plt.plot(t_fissure,x_fissure(w,t_fissure),'ob',markersize = 5,label="Temps d'initiation béton fissuré")
-    plt.hlines(e,0,t_fissure,'b',linestyles='dashed')
     plt.vlines(t_fissure,0,e,'b',linestyles='dashed')
+    plt.text(t_fissure,-5,str(int(round(t_fissure,0))),color='b')
     plt.plot(t,x_compact(K,t),label="Béton compacte")
     plt.plot(t,x_fissure(w,t),label="Béton fissuré")
     plt.xlabel("Temps [ans]")
@@ -88,13 +89,13 @@ def find_ti_corrosion (e,Dce,Clim,Cs,w,Sm0) :
     # Plot 
     plt.plot(t,C(x,Cs,Dce,t),label="Béton compacte")
     plt.plot(t,C(x,Cs,D_fissure(Dce,w,Sm0),t),label="Béton fissuré")
-    plt.plot(t,Clim*np.ones(len(t)),'--',label="Limite de concentration du ciment")
+    plt.plot(t,Clim*np.ones(len(t)),'--',color = 'black',label="Limite de concentration du ciment")
     plt.plot(t_compact,C(x,Cs,Dce,t_compact),'or',markersize = 5,label="Temps d'initiation béton compacte")
-    plt.hlines(Clim,0,t_compact,'r',linestyles='dashed')
     plt.vlines(t_compact,0,Clim,'r',linestyles='dashed')
+    plt.text(t_compact,-0.003,str(int(round(t_compact,0))),color='r')
     plt.plot(t_fissure,C(x,Cs,D_fissure(Dce,w,Sm0),t_fissure),'ob',markersize = 5,label="Temps d'initiation béton fissuré")
-    plt.hlines(Clim,0,t_fissure,'b',linestyles='dashed')
     plt.vlines(t_fissure,0,Clim,'b',linestyles='dashed')
+    plt.text(t_fissure,-0.003,str(int(round(t_fissure,0))),color='b')
     plt.xlabel("Temps [ans]")
     plt.ylabel("Concentration en chlorures [%]")
     plt.title("Concentration en chlorures en fonction du temps")
@@ -107,12 +108,10 @@ def find_ti_corrosion (e,Dce,Clim,Cs,w,Sm0) :
     
 
 if __name__ == "__main__" :
-    K1 = 9 #[mm/sqrt(ans)]
-    K2 = 7.5 #[mm/sqrt(ans)]
-    K3 = 4 #[mm/sqrt(ans)]
+    K = 7 #[mm/sqrt(ans)]
     t = np.linspace(0,200,100) # [ans]
     w = 0.3 # [mm]
-    t_compact1, t_fissure1 = find_ti_carbonatation(K1,50,0.3)
+    t_compact1, t_fissure1 = find_ti_carbonatation(K,50,0.3)
     
     Clim = 0.4 # [%]
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
@@ -126,7 +125,9 @@ if __name__ == "__main__" :
     
     print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
     
-    vcorr = 2 # [microm/ans] si seulement carbonatation
-    vcorr = 40 # [mm/ans] si carbonatation et corrosion
-    
+    vcorr_c = 2 # [microm/ans] si seulement carbonatation
+    vcorr_cc = 40 # [micron/ans] si carbonatation et chlorures
+    Ns = 4
+    d0 = 16 # [mm]
+    t0 = min(t_compact1,t_compact2,t_fissure1,t_fissure2)
     
