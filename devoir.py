@@ -42,23 +42,21 @@ def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2) :
         vcorr1 : vitesse de corrosion pour la carbonatation (mm/ans)
         vcorr2 : vitesse de corrosion pour les chlorures (mm/ans)
     """
-    As = np.zeros(len(t))
     if tcarbo < tchlor :
         t0 = tcarbo
         print("Carbonatation Frist")
     else :
         t0 = tchlor
         print("Chlorures First")
-    print(t)
-    print(t0)
-      
+
+    As = np.zeros(len(t))      
     for i in range(len(t)) : 
         if t[i] <= t0 :
             As[i] = Ns * np.pi * d0**2 / 4
         if t[i] > t0 and t[i] < tchlor:
             As[i] =  Ns * np.pi * (d0 - 2*vcorr1*(t[i]-t0))**2 / 4
         if t[i] > t0 and t[i] >= tchlor :
-            As[i] =  Ns * np.pi * (d0 - 2*vcorr2*(t[i]-tchlor))**2 / 4
+            As[i] =  Ns * np.pi * (d0 -2*vcorr1*(tchlor-t0) - 2*vcorr2*(t[i]-tchlor))**2 / 4
     
     plt.plot(t,As,label="Section d'armature")
     plt.vlines(tcarbo,0,Ns * np.pi * d0**2 / 4,'red',linestyles='dashed',label="Temps de carbonatation")
