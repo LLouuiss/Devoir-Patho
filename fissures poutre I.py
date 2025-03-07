@@ -114,7 +114,7 @@ A_s_prime = 44.19e-4  # m^2 9phi25
 E_cm = 35.2e9  # Pa béton C40/50
 phi_eff = 2
 E_s = 200e9  # Pa
-M = 15300000  # Nm
+M = 7920000  # Nm
 k_t = 0.4 #dans le cas d un chargement de longue durée
 f_ctm = 3.51e6 #Pa beton C40/50
 c = 0.05 #m enrobage des armatures
@@ -130,3 +130,4 @@ print("y_G_II = ",y_G_II)
 print("I_II = ",I_II)
 w = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,c,k1,k2,phi)
 print("w [mm], si <0.3 -> OK = ",w)
+
