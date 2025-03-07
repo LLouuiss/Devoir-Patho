@@ -74,7 +74,6 @@ def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2) :
 def find_ti_carbonatation (K,e,w) :
     """ Fonction qui trouve temps d'initiation de la carbonatation
     K : coefficient de diffusion de la carbonatation (mm/sqrt(ans))
-    x : pénétration de la carbonatation (mm)
     e : enrobage (mm)
     w : largeur de la fissure (mm)
     """
@@ -131,7 +130,28 @@ def find_ti_corrosion (e,Dce,Clim,Cs,w,Sm0) :
     
     
     return t_compact, t_fissure
-    
+
+def V_rd(As_s,fywd,d,cot_theta):
+    """ Fonction qui calcule la résistance à l'effort tranchant
+    As_s : section d'armature transversale par longueur [mm^2/m]
+    fywd : résistance acier avec coefficient sécurité [MPa] fy/1,15
+    cot_theta : inclinaison bielle comprimée 
+    d : distance entre armature béton exterieur (h-e) [m]
+    """
+    z = 0.9 * d # Méthode simplifiée distance entre armature et résultante force béton comprimé [m]
+    V_rd = As_s*fywd*z*cot_theta # [N]
+    return V_rd
+
+def M_rd(As, fyd,d):
+    """ Fonction qui calcule le moment résistant de la section
+    d : distance entre armature béton exterieur (h-e) [m]
+    As : aire d'armature [mm^2/m]
+    fyd : limite élasticité acier avec coefficent sécurité [MPa]
+    """
+    z = 0.9 * d # [m] méthode simplifiée
+    F_s = As * fyd # [N]
+    M_rd = F_s * z #[Nm]
+    return M_rd
 
 if __name__ == "__main__" :
     K = 7 #[mm/sqrt(ans)]
@@ -163,4 +183,22 @@ if __name__ == "__main__" :
     As_L = As_reduction(Ns_L,d0_L,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
     
     #### ATTENTION POUR ETRIER ON VA DEVOIR DIVISER AS EN DEUX CAR FCT PREND EN COMPTE SEULEMENT UNE SECTION D'ARMATURE ####
+    e= 50 # [mm] enrobage
+    fywd = 435 # [MPa] pour acier BE500S
+    cot_theta = 2 # inclinaison bielle comprimée
+    d = 2 - e*(10**-3) # [m] distance entre armature béton extérieur ZONE 2 => 2 m
+    Ns_E = 2*2 # 2 etriers de 2 barres
+    d0_E = 11 # [mm] diamètre des barres d'armature étriers
+    As_E = As_reduction(Ns_E,d0_E,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+    As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
+    V_rd_values = V_rd(As_Es,fywd,d,cot_theta)
+    plot = plt.plot(t,V_rd_values,label="Résistance à l'effort tranchant")
+    plt.xlabel("Temps [ans]")
+    plt.ylabel("Résistance à l'effort tranchant [N]")
+    plt.title("Résistance à l'effort tranchant en fonction du temps")
+    plt.legend()
+    plt.grid()
+    plt.show()
+    
+    
     
