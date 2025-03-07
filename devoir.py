@@ -32,7 +32,7 @@ def D_fissure (Dce,w,Smtheta) :
     Dcr = Dcr * 365*24*60*60 # [mm^2/ans]
     return Dce + (w/Smtheta)*Dcr
          
-def As_reduction (Ns,d0,t0,t,vcorr) :
+def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2) :
     """ Fonction qui calcule la réduction de la section d'armature
         Ns : nombre de barres d'armature
         d0 : diamètre des barres d'armature (mm)
@@ -40,10 +40,36 @@ def As_reduction (Ns,d0,t0,t,vcorr) :
         t : temps (ans)
         vcorr : vitesse de corrosion (mm/ans)
     """
-    if t <= t0 :
-        return Ns * np.pi * d0**2 / 4
+    As = np.zeros(len(t))
+    if tcarbo < tchlor :
+        t0 = tcarbo
+        print("Carbonatation")
     else :
-        return Ns * np.pi * (d0 - 2*vcorr*(t-t0))**2 / 4
+        t0 = tchlor
+        print("Chlorures")
+    print(t)
+    print(t0)
+      
+    for i in range(len(t)) : 
+        if t[i] <= t0 :
+            As[i] = Ns * np.pi * d0**2 / 4
+        if t[i] > t0 and t[i] < tchlor:
+            As[i] =  Ns * np.pi * (d0 - 2*vcorr1*(t[i]-t0))**2 / 4
+        if t[i] > t0 and t[i] >= tchlor :
+            As[i] =  Ns * np.pi * (d0 - 2*vcorr2*(t[i]-t0))**2 / 4
+    
+    plt.plot(t,As,label="Section d'armature")
+    plt.vlines(tcarbo,0,Ns * np.pi * d0**2 / 4,'red',linestyles='dashed',label="Temps de carbonatation")
+    plt.text(tcarbo,-1000,str(int(round(t0,0))),color='red')
+    plt.vlines(tchlor,0,Ns * np.pi * (d0 - 2*vcorr2*(tchlor-t0))**2 / 4,'brown',linestyles='dashed',label="Chlorures + Carbonatation")
+    plt.text(tchlor,-1000,str(int(round(tchlor,0))),color='brown')
+    plt.xlabel("Temps [ans]")
+    plt.ylabel("Section d'armature [mm^2]")
+    plt.title("Réduction de la section d'armature en fonction du temps")
+    plt.legend()
+    plt.grid()
+    plt.show()
+    return As
 
 def find_ti_carbonatation (K,e,w) :
     """ Fonction qui trouve temps d'initiation de la carbonatation
@@ -109,7 +135,7 @@ def find_ti_corrosion (e,Dce,Clim,Cs,w,Sm0) :
 
 if __name__ == "__main__" :
     K = 7 #[mm/sqrt(ans)]
-    t = np.linspace(0,200,100) # [ans]
+    t = np.linspace(0,200,201) # [ans]
     w = 0.3 # [mm]
     t_compact1, t_fissure1 = find_ti_carbonatation(K,50,0.3)
     
@@ -126,8 +152,14 @@ if __name__ == "__main__" :
     print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
     
     vcorr_c = 2 # [microm/ans] si seulement carbonatation
+    vcorr_c = vcorr_c * 1e-3 # [mm/ans]
     vcorr_cc = 40 # [micron/ans] si carbonatation et chlorures
-    Ns = 4
-    d0 = 16 # [mm]
+    vcorr_cc = vcorr_cc * 1e-3 # [mm/ans]
     t0 = min(t_compact1,t_compact2,t_fissure1,t_fissure2)
+    
+    # Plot de la réduction de la section d'armature pour ferraillage logitudinal et ferraillage étrier
+    Ns_L = 17 # nombre de barres d'armature longitudinales
+    d0_L = 40 # [mm] diamètre des barres d'armature longitudinales
+    As_L = As_reduction(Ns_L,d0_L,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+     
     
