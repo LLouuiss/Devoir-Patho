@@ -45,7 +45,7 @@ def calcul_caracteristiques_section_fissuree(b1, h1,b2,h2,x, d, d_prime, A_s, A_
     for i in range(10):
         x =  (b1 * x**2/2 + alpha_e * A_s * d + alpha_e * A_s_prime * d_prime) / (b1 *x + alpha_e * A_s + alpha_e * A_s_prime)
     # Calcul de l'inertie de la section fissurée
-    x = 0.88
+    #x = 0.88
     
     I_II = (b1 * h1**3 / 12) +(b2 * (x-h1)**3 / 12) + b1 * h1 * (h1/2 - x)**2+b2 * (x-h1) * (h2/2+h1 - x)**2 + alpha_e * A_s * (x - d)**2 + alpha_e * A_s_prime * (x - d_prime)**2
     return x, I_II

@@ -115,13 +115,13 @@ def find_ti_corrosion (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
     t_fissure = (e/(2*np.sqrt(D_fissure(Dce,w,Sm0))* erfinv((Cs-Clim)/Cs)))**2
     # Plot 
     if plot : 
-        plt.plot(t,C(x,Cs,Dce,t),label="Béton compacte")
-        plt.plot(t,C(x,Cs,D_fissure(Dce,w,Sm0),t),label="Béton fissuré")
+        plt.plot(t,C(e,Cs,Dce,t),label="Béton compacte")
+        plt.plot(t,C(e,Cs,D_fissure(Dce,w,Sm0),t),label="Béton fissuré")
         plt.plot(t,Clim*np.ones(len(t)),'--',color = 'black',label="Limite de concentration du ciment")
-        plt.plot(t_compact,C(x,Cs,Dce,t_compact),'or',markersize = 5,label="Temps d'initiation béton compacte")
+        plt.plot(t_compact,C(e,Cs,Dce,t_compact),'or',markersize = 5,label="Temps d'initiation béton compacte")
         plt.vlines(t_compact,0,Clim,'r',linestyles='dashed')
         plt.text(t_compact,-0.003,str(int(round(t_compact,0))),color='r')
-        plt.plot(t_fissure,C(x,Cs,D_fissure(Dce,w,Sm0),t_fissure),'ob',markersize = 5,label="Temps d'initiation béton fissuré")
+        plt.plot(t_fissure,C(e,Cs,D_fissure(Dce,w,Sm0),t_fissure),'ob',markersize = 5,label="Temps d'initiation béton fissuré")
         plt.vlines(t_fissure,0,Clim,'b',linestyles='dashed')
         plt.text(t_fissure,-0.003,str(int(round(t_fissure,0))),color='b')
         plt.xlabel("Temps [ans]")
@@ -201,10 +201,11 @@ def calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, A_s, A_s_
         # Hypothèse position de l'axe neutre est dans la semelle
         #x =  ((b1 * x**2)/2 + alpha_e * A_s * d + alpha_e * A_s_prime * d_prime) / (b1 *x + alpha_e * A_s + alpha_e * A_s_prime)
         # Hypothèse position de l'axe neutre est dans l'âme
-        x =  (((b1 * h1**2)/2 + b2 * (x-h1) * x) + alpha_e * A_s * d + alpha_e * A_s_prime * d_prime) / (b1 * h1 + b2 * (x-h1) + alpha_e * A_s + alpha_e * A_s_prime)
+        x =  (((b1 * h1**2)/2 + b2 * (x-h1) * (h1 +(x-h1)/2 )) + alpha_e * A_s * d + alpha_e * A_s_prime * d_prime) / (b1 * h1 + b2 * (x-h1) + alpha_e * A_s + alpha_e * A_s_prime)
+        print("x = ",x)
     # Calcul de l'inertie de la section fissurée
     # Hypothèse position de l'axe neutre est dans l'âme
-    I_II = (b1 * h1**3 / 12) +(b2 * (x-h1)**3 / 12) + b1 * h1 * (h1/2 - x)**2 + b2 * (x-h1) * ((x-h1)/2+h1 - x)**2 + alpha_e * A_s * (x - d)**2 + alpha_e * A_s_prime * (x - d_prime)**2
+    I_II = (b1 * h1**3 / 12) +(b2 * (x-h1)**3 / 12) + b1 * h1 * (h1/2 - x)**2 + b2 * (x-h1) * ((x-h1)/2 + h1 - x)**2 + alpha_e * A_s * (x - d)**2 + alpha_e * A_s_prime * (x - d_prime)**2
     return x, I_II
 
 
@@ -261,15 +262,34 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
 
 if __name__ == "__main__" :
     """ Données du problème """
+    plot = True 
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
     t = np.linspace(0,200,201) # [ans]
-    #w = 0.3 # [mm]
     Clim = 0.4 # [%] concentration limite en chlorures
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
     Dce = 5e-13 # [m^2/s] coefficient de diffusion des chlorures dans le béton non fissuré
     Dce = Dce * 1e6 # [mm^2/s]
     Dce = Dce * 365*24*60*60 # [mm^2/ans]
     Cs = 0.15 # [%] concentration en surface
+    vcorr_c = 2 # [microm/ans] si seulement carbonatation
+    vcorr_c = vcorr_c * 1e-3 # [mm/ans]
+    vcorr_cc = 40 # [micron/ans] si carbonatation et chlorures
+    vcorr_cc = vcorr_cc * 1e-3 # [mm/ans]
+    
+    # Efforts sollicitants
+    M = 7920000  # Nm
+    M = M * 1e3 # Nmm
+    V =  1320000  # N
+    
+    # Caractéristiques béton et acier
+    fywd = 435 # [MPa] pour acier BE500S
+    f_ctm = 3.51e6 # Pa beton C40/50
+    f_ctm = f_ctm * 1e-6 # MPa
+    E_s = 200e9  # Pa Module d'élasticité de l'acier
+    E_s = E_s * 1e-6 # MPa 
+    E_cm = 35.2e9  # Pa béton C40/50
+    E_cm = E_cm * 1e-6 # MPa
+    phi_eff = 2 # coefficient de fluage effectif du béton
     
     e = 50 # [mm] enrobage
     """Géométrie de la section au nu de la colonne """
@@ -279,27 +299,16 @@ if __name__ == "__main__" :
     h2 = 1400 # mm
     b3 = 1400 # mm
     h3 = 300 # mm
-    
-    d = 2000 - e  # mm
+    d = 2000 - e   # mm
     d_prime = e # mm
-    A_s =  28 * 32**2 * np.pi/4 # mm^2 28phi32 en traction
-    print("A_s = ",A_s)
-    A_s_prime = 9 * 25**2 * np.pi/4  # mm^2 9phi25 en compression
-    E_cm = 35.2e9  # Pa béton C40/50
-    E_cm = E_cm * 1e-6 # MPa
-    phi_eff = 2 # coefficient de fluage effectif du béton
-    E_s = 200e9  # Pa
-    E_s = E_s * 1e-6 # MPa
     k_t = 0.4 # dans le cas d un chargement de longue durée
-    f_ctm = 3.51e6 # Pa beton C40/50
-    f_ctm = f_ctm * 1e-6 # MPa
     k1 = 0.8 # pour des barres à haute adhérence
     k2 = 0.5 # en flexion simple
 
     
-    # Efforts sollicitants
-    M = 7920000  # Nm
-    M = M * 1e3 # Nmm
+    
+    A_s =  28 * 32**2 * np.pi/4 # mm^2 28phi32 en traction
+    A_s_prime = 9 * 25**2 * np.pi/4  # mm^2 9phi25 en compression
     
     y_G_I, I_I, alpha_e = calcul_caracteristiques_section_non_fissuree(b1, h1,b2,h2,b3,h3, d, d_prime, A_s, A_s_prime, E_cm, phi_eff, E_s)
     y_G_II, I_II = calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, A_s, A_s_prime, alpha_e)
@@ -307,53 +316,58 @@ if __name__ == "__main__" :
     w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
     print("w [mm], si <0.3 -> OK = ",w)
     
-    t_compact1, t_fissure1 = find_ti_carbonatation(K,e,w)
-    t_compact2, t_fissure2 = find_ti_corrosion(e,Dce,Clim,Cs,w,Sm0)
+    t_compact1, t_fissure1 = find_ti_carbonatation(K,e,w,plot=True)
+    t_compact2, t_fissure2 = find_ti_corrosion(e,Dce,Clim,Cs,w,Sm0,plot=True)
     
     print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
     
     
-    vcorr_c = 2 # [microm/ans] si seulement carbonatation
-    vcorr_c = vcorr_c * 1e-3 # [mm/ans]
-    vcorr_cc = 40 # [micron/ans] si carbonatation et chlorures
-    vcorr_cc = vcorr_cc * 1e-3 # [mm/ans]
     t0 = min(t_compact1,t_compact2,t_fissure1,t_fissure2)
     
     # Plot de la réduction de la section d'armature pour ferraillage logitudinal et ferraillage étrier
-    Ns_L = 28 # nombre de barres d'armature longitudinales
-    d0_L = 32 # [mm] diamètre des barres d'armature longitudinales
-    As_L = As_reduction(Ns_L,d0_L,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+    Ns_L1 = 28 # nombre de barres d'armature longitudinales
+    d0_L1 = 32 # [mm] diamètre des barres d'armature longitudinales en traction
+    Ns_L2 = 9 # nombre de barres d'armature longitudinales
+    d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
+    As_L = As_reduction(Ns_L1,d0_L1,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+    As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
     
-    fywd = 435 # [MPa] pour acier BE500S
+
+        
     M_rd_values = M_rd(As_L,fywd,d)
-    plt.plot(t,M_rd_values,label="Moment résistant")
-    plt.plot(t,M*np.ones(len(t)),'--',color = 'black',label="Moment sollicitant")
-    plt.xlabel("Temps [ans]")
-    plt.ylabel("Moment résistant [Nmm]")
-    plt.title("Moment résistant en fonction du temps pour un enrobage de" + str(e) + " mm")
-    plt.legend()
-    plt.grid()
-    plt.show()
+    if plot :
+        plt.plot(t,M_rd_values,label="Moment résistant")
+        plt.plot(t,M*np.ones(len(t)),'--',color = 'black',label="Moment sollicitant")
+        plt.xlabel("Temps [ans]")
+        plt.ylabel("Moment résistant [Nmm]")
+        plt.title("Moment résistant en fonction du temps pour un enrobage de" + str(e) + " mm")
+        plt.legend()
+        plt.grid()
+        plt.show()
     
 
     
     #### ATTENTION POUR ETRIER ON VA DEVOIR DIVISER AS EN DEUX CAR FCT PREND EN COMPTE SEULEMENT UNE SECTION D'ARMATURE ####
     
     ## On analyse la resistence des etriers pour la zone au nu de la colonne car effort tranchant plus critique
-    
+    d = 1500 - e  # mm
     cot_theta = 2 # inclinaison bielle comprimée
     Ns_E = 2*2 # 2 etriers de 2 barres
     d0_E = 11 # [mm] diamètre des barres d'armature étriers
     As_E = As_reduction(Ns_E,d0_E,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
     As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
     V_rd_values = V_rd(As_Es,fywd,d*10**-3,cot_theta)
-    plot = plt.plot(t,V_rd_values,label="Résistance à l'effort tranchant")
-    plt.xlabel("Temps [ans]")
-    plt.ylabel("Résistance à l'effort tranchant [N]")
-    plt.title("Résistance à l'effort tranchant en fonction du temps")
-    plt.legend()
-    plt.grid()
-    plt.show()
+    if plot :
+        plt.plot(t,V_rd_values,label="Effort tranchant résistant")
+        plt.plot(t,V*np.ones(len(t)),'--',color = 'black',label="Effort tranchant sollicitant")
+        plt.xlabel("Temps [ans]")
+        plt.ylabel("Effort tranchant résistant [N]")
+        plt.title("Effort tranchant résistant en fonction du temps pour un enrobage de" + str(e) + " mm")
+        plt.legend()
+        plt.grid()
+        plt.show()
+    
+   
     
     
     
