@@ -5,6 +5,10 @@ from scipy.interpolate import interp1d
 from scipy.optimize import fsolve
 
 
+def find_intersection(x):
+    """ Fonction qui trouve l'intersection de deux fonctions"""
+    return f1(x) - f2(x)
+
 def x_compact(K,t) :
     """ Fonction qui calcule la pénétration de la carbonatation du béton compact en fonction du temps"""
     return K * np.sqrt(t)
@@ -267,9 +271,9 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
 
 if __name__ == "__main__" :
     """ Données du problème """
-    plot = True 
+    plot = False 
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
-    t = np.linspace(0,200,201) # [ans]
+    t = np.linspace(1,200,202) # [ans]
     Clim = 0.4 # [%] concentration limite en chlorures
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
     Dce = 5e-13 # [m^2/s] coefficient de diffusion des chlorures dans le béton non fissuré
@@ -296,105 +300,123 @@ if __name__ == "__main__" :
     E_cm = E_cm * 1e-6 # MPa
     phi_eff = 2 # coefficient de fluage effectif du béton
     
-    enrobage  = np.linspace(50,0,11) # [mm] enrobage
+    enrobage  = np.linspace(50,5,10) # [mm] enrobage
+    solution_M = []
+    solution_V = []
     for i in enrobage :
         print("Enrobage = ",i)
-    e = 50 # [mm] enrobage
-    """Géométrie de la section au nu de la colonne """
-    b1 = 800 # mm
-    h1 = 300 # mm  
-    b2 = 400 # mm 
-    h2 = 1400 # mm
-    b3 = 1400 # mm
-    h3 = 300 # mm
-    d = 2000 - e   # mm
-    d_prime = e # mm
-    k_t = 0.4 # dans le cas d un chargement de longue durée
-    k1 = 0.8 # pour des barres à haute adhérence
-    k2 = 0.5 # en flexion simple
-
-    
-    
-    A_s =  28 * 32**2 * np.pi/4 # mm^2 28phi32 en traction
-    A_s_prime = 9 * 25**2 * np.pi/4  # mm^2 9phi25 en compression
-    
-    y_G_I, I_I, alpha_e = calcul_caracteristiques_section_non_fissuree(b1, h1,b2,h2,b3,h3, d, d_prime, A_s, A_s_prime, E_cm, phi_eff, E_s)
-    y_G_II, I_II = calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, A_s, A_s_prime, alpha_e)
-    phi = 32 # mm diamètre des armatures en traction        
-    w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
-    print("w [mm], si <0.3 -> OK = ",w)
-    
-    t_compact1, t_fissure1 = find_ti_carbonatation(K,e,w)
-    t_compact2, t_fissure2 = find_ti_corrosion(e,Dce,Clim,Cs,w,Sm0)
-    
-    print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
-    
-    
-    t0 = min(t_compact1,t_compact2,t_fissure1,t_fissure2)
-    
-    # Plot de la réduction de la section d'armature pour ferraillage logitudinal et ferraillage étrier
-    Ns_L1 = 28 # nombre de barres d'armature longitudinales
-    d0_L1 = 32 # [mm] diamètre des barres d'armature longitudinales en traction
-    Ns_L2 = 9 # nombre de barres d'armature longitudinales
-    d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
-    As_L = As_reduction(Ns_L1,d0_L1,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
-    As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
-    
+        e = i # [mm] enrobage
+        """Géométrie de la section au nu de la colonne """
+        b1 = 800 # mm
+        h1 = 300 # mm  
+        b2 = 400 # mm 
+        h2 = 1400 # mm
+        b3 = 1400 # mm
+        h3 = 300 # mm
+        d = 2000 - e   # mm
+        d_prime = e # mm
+        k_t = 0.4 # dans le cas d un chargement de longue durée
+        k1 = 0.8 # pour des barres à haute adhérence
+        k2 = 0.5 # en flexion simple
 
         
-    M_rd_values = M_rd(As_L,fywd,d)
-    if plot :
-        plt.plot(t,M_rd_values,label="Moment résistant")
-        plt.plot(t,M*np.ones(len(t)),'--',color = 'black',label="Moment sollicitant")
-        plt.xlabel("Temps [ans]")
-        plt.ylabel("Moment résistant [Nmm]")
-        plt.title("Moment résistant en fonction du temps pour un enrobage de" + str(e) + " mm")
-        plt.legend()
-        plt.grid()
-        plt.show()
+        
+        A_s =  28 * 32**2 * np.pi/4 # mm^2 28phi32 en traction
+        A_s_prime = 9 * 25**2 * np.pi/4  # mm^2 9phi25 en compression
+        
+        y_G_I, I_I, alpha_e = calcul_caracteristiques_section_non_fissuree(b1, h1,b2,h2,b3,h3, d, d_prime, A_s, A_s_prime, E_cm, phi_eff, E_s)
+        y_G_II, I_II = calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, A_s, A_s_prime, alpha_e)
+        phi = 32 # mm diamètre des armatures en traction        
+        w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
+        print("w [mm], si <0.3 -> OK = ",w)
+        
+        t_compact1, t_fissure1 = find_ti_carbonatation(K,e,w)
+        t_compact2, t_fissure2 = find_ti_corrosion(e,Dce,Clim,Cs,w,Sm0)
+        
+        print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
+        
+        
+        t0 = min(t_compact1,t_compact2,t_fissure1,t_fissure2)
+        
+        # Plot de la réduction de la section d'armature pour ferraillage logitudinal et ferraillage étrier
+        Ns_L1 = 28 # nombre de barres d'armature longitudinales
+        d0_L1 = 32 # [mm] diamètre des barres d'armature longitudinales en traction
+        Ns_L2 = 9 # nombre de barres d'armature longitudinales
+        d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
+        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+        
+
+            
+        M_rd_values = M_rd(As_L,fywd,d)
+        if plot :
+            plt.plot(t,M_rd_values,label="Moment résistant")
+            plt.plot(t,M*np.ones(len(t)),'--',color = 'black',label="Moment sollicitant")
+            plt.xlabel("Temps [ans]")
+            plt.ylabel("Moment résistant [Nmm]")
+            plt.title("Moment résistant en fonction du temps pour un enrobage de" + str(e) + " mm")
+            plt.legend()
+            plt.grid()
+            plt.show()
+        # Créer des interpolations linéaires
+        f1 = interp1d(t, M_rd_values, kind='linear', fill_value="extrapolate")
+        f2 = interp1d(t, M*np.ones(len(t)), kind='linear', fill_value="extrapolate")
+
+        # Trouver l'intersection numériquement
+        x_guess = min(t_fissure2,t_compact2)  # Estimation initiale de l'intersection
+        x_intersection = fsolve(find_intersection, x_guess)[0]
+        y_intersection = f1(x_intersection)
+
+        # Afficher les coordonnées d'intersection
+        print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
+        solution_M.append(x_intersection)
+   
+        
+
+        
+        #### ATTENTION POUR ETRIER ON VA DEVOIR DIVISER AS EN DEUX CAR FCT PREND EN COMPTE SEULEMENT UNE SECTION D'ARMATURE ####
+        
+        ## On analyse la resistence des etriers pour la zone au nu de la colonne car effort tranchant plus critique
+        d = 1500 - e  # mm
+        cot_theta = 2 # inclinaison bielle comprimée
+        Ns_E = 2*2 # 2 etriers de 2 barres
+        d0_E = 10 # [mm] diamètre des barres d'armature étriers
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+        As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
+        V_rd_values = V_rd(As_Es,fywd,d*10**-3,cot_theta)
+        if plot :
+            plt.plot(t,V_rd_values,label="Effort tranchant résistant")
+            plt.plot(t,V*np.ones(len(t)),'--',color = 'black',label="Effort tranchant sollicitant")
+            plt.xlabel("Temps [ans]")
+            plt.ylabel("Effort tranchant résistant [N]")
+            plt.title("Effort tranchant résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
+            plt.legend()
+            plt.grid()
+            plt.show()
+        # Créer des interpolations linéaires
+        f1 = interp1d(t, V_rd_values, kind='linear', fill_value="extrapolate")
+        f2 = interp1d(t, V*np.ones(len(t)), kind='linear', fill_value="extrapolate")
+
+        # Trouver l'intersection numériquement
+        x_guess = 75   # Estimation initiale de l'intersection
+        x_intersection = fsolve(find_intersection, x_guess)[0]
+        y_intersection = f1(x_intersection)
+
+        # Afficher les coordonnées d'intersection
+        print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
+        solution_V.append(x_intersection)
+            
     
-
     
-    #### ATTENTION POUR ETRIER ON VA DEVOIR DIVISER AS EN DEUX CAR FCT PREND EN COMPTE SEULEMENT UNE SECTION D'ARMATURE ####
+    plt.plot(enrobage,solution_M,label="Rupture par flexion")
+    plt.plot(enrobage,solution_V,label="Rupture par effort tranchant")
+    plt.xlabel("Enrobage [mm]")
+    plt.ylabel("Temps [ans]")
+    plt.title("Temps avant la rupture en fonction de l'enrobage")
+    plt.legend()
+    plt.grid()
+    plt.show()
     
-    ## On analyse la resistence des etriers pour la zone au nu de la colonne car effort tranchant plus critique
-    d = 1500 - 150  # mm
-    cot_theta = 2 # inclinaison bielle comprimée
-    Ns_E = 2*2 # 2 etriers de 2 barres
-    d0_E = 10 # [mm] diamètre des barres d'armature étriers
-    As_E = As_reduction(Ns_E,d0_E,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
-    As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
-    V_rd_values = V_rd(As_Es,fywd,d*10**-3,cot_theta)
-    if plot :
-        plt.plot(t,V_rd_values,label="Effort tranchant résistant")
-        plt.plot(t,V*np.ones(len(t)),'--',color = 'black',label="Effort tranchant sollicitant")
-        plt.xlabel("Temps [ans]")
-        plt.ylabel("Effort tranchant résistant [N]")
-        plt.title("Effort tranchant résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
-        plt.legend()
-        plt.grid()
-        plt.show()
-    
-    
-
-
-# Créer des interpolations linéaires
-f1 = interp1d(t, V_rd_values, kind='linear', fill_value="extrapolate")
-f2 = interp1d(t, V*np.ones(len(t)), kind='linear', fill_value="extrapolate")
-
-# Définir une fonction pour trouver l'intersection (f1(x) - f2(x) = 0)
-def find_intersection(x):
-    return f1(x) - f2(x)
-
-# Trouver l'intersection numériquement
-x_guess = 75  # Estimation initiale de l'intersection
-x_intersection = fsolve(find_intersection, x_guess)[0]
-y_intersection = f1(x_intersection)
-
-
-
-# Afficher les coordonnées d'intersection
-print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
    
     
     
