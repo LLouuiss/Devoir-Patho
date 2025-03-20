@@ -111,8 +111,8 @@ def find_ti_carbonatation (K,e,w,plot = False) :
     
     return t_compact, t_fissure
     
-def find_ti_corrosion (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
-    """ Fonction qui trouve temps d'initiation de la corrosion
+def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
+    """ Fonction qui trouve temps d'initiation de la corrosion par les chlorures
     e : enrobage (mm)
     Dce : coefficient de diffusion des chlorures (mm^2/ans)
     Clim : concentration limite en chlorures (%)
@@ -211,14 +211,14 @@ def calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, A_s, A_s_
         #x =  ((b1 * x**2)/2 + alpha_e * A_s * d + alpha_e * A_s_prime * d_prime) / (b1 *x + alpha_e * A_s + alpha_e * A_s_prime)
         # Hypothèse position de l'axe neutre est dans l'âme
         x =  (((b1 * h1**2)/2 + b2 * (x-h1) * (h1 +(x-h1)/2 )) + alpha_e * A_s * d + alpha_e * A_s_prime * d_prime) / (b1 * h1 + b2 * (x-h1) + alpha_e * A_s + alpha_e * A_s_prime)
-        print("x = ",x)
+        #print("x = ",x)
     # Calcul de l'inertie de la section fissurée
     # Hypothèse position de l'axe neutre est dans l'âme
     I_II = (b1 * h1**3 / 12) +(b2 * (x-h1)**3 / 12) + b1 * h1 * (h1/2 - x)**2 + b2 * (x-h1) * ((x-h1)/2 + h1 - x)**2 + alpha_e * A_s * (x - d)**2 + alpha_e * A_s_prime * (x - d_prime)**2
     return x, I_II
 
 
-def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_ctm,c,k1,k2,phi) :
+def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_ctm,c,k1,k2,phi,print_values = False) :
     """Calcule l'ouverture des fissures à l'ELS quasi-permanent
     M_II: Moment fléchissant (Nmm)
     d : hauteur armature tendue (mm)
@@ -242,29 +242,30 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
     
     # Calcul de la contrainte dans les armatures tendues (sigma_s)
     sigma_s = alpha_e * (M_II / I_II) * (d - x)  # MPa
-    print("d = ",d)
-    print("x = ",x)
-    print("sigma_s = ",sigma_s)
     # Calcul de la hauteur efficace du béton autour des armatures
     h_ceff = min(2.5 * (h - d),(h-x)/3, h/2 ) # mm
-    print("h_ceff = ",h_ceff)
+    
     ##### TO EDIT #####
     rho_seff = A_s / (h_ceff * b)
-    print("rho_seff = ",rho_seff)
     # Calcul de la déformation epsilon_sm - epsilon_cm
     terme1 = sigma_s / E_s
-    print("terme1 = ",0.6*terme1)
 
     terme2 = k_t * (f_ctm / (E_s * rho_seff)) * (1 + alpha_e * rho_seff)
    
     epsilon_sm_cm = max(terme1 * 0.6, terme1 - terme2)
-    print("epsilon_sm_cm = ",epsilon_sm_cm)
     
     # Espacement des fissures (approximé selon des formules usuelles)
     s_r_max = 3.4*c + 0.425*k1*k2*phi/rho_seff  # Approche simplifiée (mm)
     print("s_r_max = ",s_r_max)
     # Ouverture des fissures
     w_k = s_r_max * epsilon_sm_cm  # mm
+    if print_values :
+        print("d = ",d)
+        print("x = ",x)
+        print("sigma_s = ",sigma_s)
+        print("h_ceff = ",h_ceff)
+        print("terme1 = ",0.6*terme1)
+        print("epsilon_sm_cm = ",epsilon_sm_cm)
     
     return w_k, s_r_max
 
@@ -300,7 +301,8 @@ if __name__ == "__main__" :
     E_cm = E_cm * 1e-6 # MPa
     phi_eff = 2 # coefficient de fluage effectif du béton
     
-    enrobage  = np.linspace(50,5,10) # [mm] enrobage
+    #enrobage  = np.linspace(50,5,10) # [mm] enrobage
+    enrobage = [40]
     solution_M = []
     solution_V = []
     for i in enrobage :
@@ -330,21 +332,44 @@ if __name__ == "__main__" :
         w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
         print("w [mm], si <0.3 -> OK = ",w)
         
-        t_compact1, t_fissure1 = find_ti_carbonatation(K,e,w)
-        t_compact2, t_fissure2 = find_ti_corrosion(e,Dce,Clim,Cs,w,Sm0)
+        t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w)
+        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0)
         
-        print("Temps d'initiation de la corrosion : ",min(t_compact1,t_compact2,t_fissure1,t_fissure2)," ans")
+        print("Temps d'initiation de la corrosion : ",min(t_compact_carbo,t_compact_chl,t_fissure_carbo,t_fissure_chl)," ans")
         
         
-        t0 = min(t_compact1,t_compact2,t_fissure1,t_fissure2)
+        t0 = min(t_compact_carbo,t_compact_chl,t_fissure_carbo,t_fissure_chl)
         
         # Plot de la réduction de la section d'armature pour ferraillage logitudinal et ferraillage étrier
         Ns_L1 = 28 # nombre de barres d'armature longitudinales
         d0_L1 = 32 # [mm] diamètre des barres d'armature longitudinales en traction
         Ns_L2 = 9 # nombre de barres d'armature longitudinales
         d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
-        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
-        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+        
+        print("t chlorure compact = ",t_compact_chl)
+        print("t chlorure fissure = ",t_fissure_chl)
+        
+        # Non linéarité de la réduction de la section d'armature
+        NL = False
+        if NL :
+            for i in range(len(t)) :
+                if t[i] <= t0 :
+                    As_L[i] = As_L[i]
+                if t[i] > t0 and t[i] < min(t_compact_chl,t_fissure_chl) : 
+                    y_G_II, I_II = calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, As_L[i], As_L2[i], alpha_e)
+                    phi = np.sqrt(4*As_L[i]/(np.pi*Ns_L1)) # [mm] diamètre des armatures en traction
+                    print("phi = ",phi)
+                    w, sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, As_L[i], b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
+                    t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,sm0)
+                    As_L[i:] = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
+                    As_L2[i:] = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
+                if t[i] > t0 and t[i] >= min(t_compact_chl,t_fissure_chl) :
+                    break
+            
+        print("t chlorure compact = ",t_compact_chl)
+        print("t chlorure fissure = ",t_fissure_chl)
         
 
             
@@ -363,7 +388,7 @@ if __name__ == "__main__" :
         f2 = interp1d(t, M*np.ones(len(t)), kind='linear', fill_value="extrapolate")
 
         # Trouver l'intersection numériquement
-        x_guess = min(t_fissure2,t_compact2)  # Estimation initiale de l'intersection
+        x_guess = min(t_fissure_chl,t_compact_chl)  # Estimation initiale de l'intersection
         x_intersection = fsolve(find_intersection, x_guess)[0]
         y_intersection = f1(x_intersection)
 
@@ -381,7 +406,7 @@ if __name__ == "__main__" :
         cot_theta = 2 # inclinaison bielle comprimée
         Ns_E = 2*2 # 2 etriers de 2 barres
         d0_E = 10 # [mm] diamètre des barres d'armature étriers
-        As_E = As_reduction(Ns_E,d0_E,min(t_compact1,t_fissure1),min(t_compact2,t_fissure2),t,vcorr_c,vcorr_cc)
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
         V_rd_values = V_rd(As_Es,fywd,d*10**-3,cot_theta)
         if plot :
