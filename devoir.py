@@ -274,7 +274,7 @@ if __name__ == "__main__" :
     """ Données du problème """
     plot = False 
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
-    t = np.linspace(1,200,202) # [ans]
+    t = np.linspace(1,500,502) # [ans]
     Clim = 0.4 # [%] concentration limite en chlorures
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
     Dce = 5e-13 # [m^2/s] coefficient de diffusion des chlorures dans le béton non fissuré
@@ -302,9 +302,12 @@ if __name__ == "__main__" :
     phi_eff = 2 # coefficient de fluage effectif du béton
     
     #enrobage  = np.linspace(50,5,10) # [mm] enrobage
-    enrobage = [40]
+    #enrobage  = np.linspace(80,5,16) # [mm] enrobage
+    enrobage = [80]
     solution_M = []
     solution_V = []
+    lineaire = ()
+    non_lineaire = ()
     for i in enrobage :
         print("Enrobage = ",i)
         e = i # [mm] enrobage
@@ -347,12 +350,17 @@ if __name__ == "__main__" :
         d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
         As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+        Ns_E = 2*2 # 2 etriers de 2 barres
+        d0_E = 10 # [mm] diamètre des barres d'armature étriers
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+        
+        lineaire = (As_L,As_L2,As_E)
         
         print("t chlorure compact = ",t_compact_chl)
         print("t chlorure fissure = ",t_fissure_chl)
         
         # Non linéarité de la réduction de la section d'armature
-        NL = False
+        NL = True 
         if NL :
             for i in range(len(t)) :
                 if t[i] <= t0 :
@@ -365,11 +373,14 @@ if __name__ == "__main__" :
                     t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,sm0)
                     As_L[i:] = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
                     As_L2[i:] = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
+                    As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
                 if t[i] > t0 and t[i] >= min(t_compact_chl,t_fissure_chl) :
                     break
             
         print("t chlorure compact = ",t_compact_chl)
         print("t chlorure fissure = ",t_fissure_chl)
+        
+        non_lineaire = (As_L,As_L2,As_E)
         
 
             
@@ -379,7 +390,7 @@ if __name__ == "__main__" :
             plt.plot(t,M*np.ones(len(t)),'--',color = 'black',label="Moment sollicitant")
             plt.xlabel("Temps [ans]")
             plt.ylabel("Moment résistant [Nmm]")
-            plt.title("Moment résistant en fonction du temps pour un enrobage de" + str(e) + " mm")
+            plt.title("Moment résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
             plt.show()
@@ -404,9 +415,6 @@ if __name__ == "__main__" :
         ## On analyse la resistence des etriers pour la zone au nu de la colonne car effort tranchant plus critique
         d = 1500 - e  # mm
         cot_theta = 2 # inclinaison bielle comprimée
-        Ns_E = 2*2 # 2 etriers de 2 barres
-        d0_E = 10 # [mm] diamètre des barres d'armature étriers
-        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
         V_rd_values = V_rd(As_Es,fywd,d*10**-3,cot_theta)
         if plot :
@@ -423,7 +431,7 @@ if __name__ == "__main__" :
         f2 = interp1d(t, V*np.ones(len(t)), kind='linear', fill_value="extrapolate")
 
         # Trouver l'intersection numériquement
-        x_guess = 75   # Estimation initiale de l'intersection
+        x_guess = min(t_fissure_chl,t_compact_chl) + 30  # Estimation initiale de l'intersection
         x_intersection = fsolve(find_intersection, x_guess)[0]
         y_intersection = f1(x_intersection)
 
@@ -441,6 +449,20 @@ if __name__ == "__main__" :
     plt.legend()
     plt.grid()
     plt.show()
+    
+    # Non linéarité de la réduction de la section d'armature
+    plt.plot(t,non_lineaire[0],label="Section d'armature longitudinale")
+    plt.plot(t,lineaire[0],label="Section d'armature longitudinale linéaire")
+    plt.xlabel("Temps [ans]")
+    plt.ylabel("Section d'armature [mm^2]")
+    plt.title("Réduction de la section d'armature longitudinale en fonction du temps")
+    plt.legend()
+    plt.grid()
+    plt.show()
+    
+    
+    
+    
     
    
     
