@@ -347,15 +347,15 @@ if __name__ == "__main__" :
         t0 = min(t_compact_carbo,t_compact_chl,t_fissure_carbo,t_fissure_chl)
         
         # Plot de la réduction de la section d'armature pour ferraillage logitudinal et ferraillage étrier
-        Ns_L1 = 28 # nombre de barres d'armature longitudinales
+        Ns_L1 = 28 # nombre de barres d'armature longitudinales 28
         d0_L1 = 32 # [mm] diamètre des barres d'armature longitudinales en traction
         Ns_L2 = 9 # nombre de barres d'armature longitudinales
         d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
-        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,)
+        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         Ns_E = 2*2 # 2 etriers de 2 barres
         d0_E = 10 # [mm] diamètre des barres d'armature étriers
-        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True)
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         
         lineaire = (As_L,As_L2,As_E)
         
@@ -363,7 +363,7 @@ if __name__ == "__main__" :
         print("t chlorure fissure = ",t_fissure_chl)
         
         # Non linéarité de la réduction de la section d'armature
-        NL = True 
+        NL = False 
         if NL :
             for i in range(len(t)) :
                 if t[i] <= t0 :
@@ -388,13 +388,14 @@ if __name__ == "__main__" :
             
         M_rd_values = M_rd(As_L,fywd,d)
         if plot :
-            plt.plot(t,M_rd_values,label="Moment résistant")
-            plt.plot(t,M*np.ones(len(t)),'--',color = 'black',label="Moment sollicitant")
+            plt.plot(t,M_rd_values*10**(-6),label="Moment résistant")
+            plt.plot(t,M*np.ones(len(t))*10**(-6),'--',color = 'black',label="Moment sollicitant")
             plt.xlabel("Temps [ans]")
-            plt.ylabel("Moment résistant [Nmm]")
+            plt.ylabel("Moment résistant [kNm]")
             plt.title("Moment résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
+            #plt.savefig("moment_resistant_15cm.pdf",bbox_inches='tight')
             plt.show()
         # Créer des interpolations linéaires
         f1 = interp1d(t, M_rd_values, kind='linear', fill_value="extrapolate")
@@ -417,13 +418,14 @@ if __name__ == "__main__" :
         As_Es = As_E / 0.11 # [mm^2/m] 2 etriers tout les 11 cm
         V_rd_values = V_rd(As_Es,fywd,d*10**-3,cot_theta)
         if plot :
-            plt.plot(t,V_rd_values,label="Effort tranchant résistant")
-            plt.plot(t,V*np.ones(len(t)),'--',color = 'black',label="Effort tranchant sollicitant")
+            plt.plot(t,V_rd_values*10**(-3),label="Effort tranchant résistant")
+            plt.plot(t,V*np.ones(len(t))*10**(-3),'--',color = 'black',label="Effort tranchant sollicitant")
             plt.xlabel("Temps [ans]")
-            plt.ylabel("Effort tranchant résistant [N]")
+            plt.ylabel("Effort tranchant résistant [kN]")
             plt.title("Effort tranchant résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
+            #plt.savefig("effort_tranchant_15cm.pdf",bbox_inches='tight')
             plt.show()
         # Créer des interpolations linéaires
         f1 = interp1d(t, V_rd_values, kind='linear', fill_value="extrapolate")
