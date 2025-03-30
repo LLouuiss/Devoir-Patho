@@ -70,14 +70,15 @@ def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2,plot = False) :
     if plot :
         plt.plot(t,As,label="Section d'armature")
         plt.vlines(tcarbo,0,Ns * np.pi * d0**2 / 4,'red',linestyles='dashed',label="Temps de carbonatation")
-        plt.text(tcarbo,-1000,str(int(round(t0,0))),color='red')
+        plt.text(tcarbo,-15,str(int(round(t0,0))),color='red')
         plt.vlines(tchlor,0,Ns * np.pi * (d0 - 2*vcorr1*(tchlor-t0))**2 / 4,'brown',linestyles='dashed',label="Chlorures + Carbonatation")
-        plt.text(tchlor,-1000,str(int(round(tchlor,0))),color='brown')
+        plt.text(tchlor,-15,str(int(round(tchlor,0))),color='brown')
         plt.xlabel("Temps [ans]")
         plt.ylabel("Section d'armature [mm^2]")
         plt.title("Réduction de la section d'armature en fonction du temps")
         plt.legend()
         plt.grid()
+        #plt.savefig("red_section_etrier.pdf")
         plt.show()
     return As
 
@@ -107,6 +108,7 @@ def find_ti_carbonatation (K,e,w,plot = False) :
         plt.title("Pénétration de la carbonatation en fonction du temps")
         plt.grid()
         plt.legend()
+        plt.savefig("carbonatation.pdf")
         plt.show()
     
     return t_compact, t_fissure
@@ -138,6 +140,7 @@ def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
         plt.title("Concentration en chlorures en fonction du temps")
         plt.grid()
         plt.legend()
+        plt.savefig("chlorure.pdf")
         plt.show()
     
     
@@ -272,9 +275,9 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
 
 if __name__ == "__main__" :
     """ Données du problème """
-    plot = False 
+    plot = True 
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
-    t = np.linspace(1,500,502) # [ans]
+    t = np.linspace(1,300,302) # [ans]
     Clim = 0.4 # [%] concentration limite en chlorures
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
     Dce = 5e-13 # [m^2/s] coefficient de diffusion des chlorures dans le béton non fissuré
@@ -303,7 +306,7 @@ if __name__ == "__main__" :
     
     #enrobage  = np.linspace(50,5,10) # [mm] enrobage
     #enrobage  = np.linspace(80,5,16) # [mm] enrobage
-    enrobage = [80]
+    enrobage = [50]
     solution_M = []
     solution_V = []
     lineaire = ()
@@ -348,11 +351,11 @@ if __name__ == "__main__" :
         d0_L1 = 32 # [mm] diamètre des barres d'armature longitudinales en traction
         Ns_L2 = 9 # nombre de barres d'armature longitudinales
         d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
-        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,)
         As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
         Ns_E = 2*2 # 2 etriers de 2 barres
         d0_E = 10 # [mm] diamètre des barres d'armature étriers
-        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True)
         
         lineaire = (As_L,As_L2,As_E)
         
@@ -373,7 +376,7 @@ if __name__ == "__main__" :
                     t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,sm0)
                     As_L[i:] = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
                     As_L2[i:] = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
-                    As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)
+                    As_E[i:] = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)[i:]
                 if t[i] > t0 and t[i] >= min(t_compact_chl,t_fissure_chl) :
                     break
             
@@ -381,7 +384,6 @@ if __name__ == "__main__" :
         print("t chlorure fissure = ",t_fissure_chl)
         
         non_lineaire = (As_L,As_L2,As_E)
-        
 
             
         M_rd_values = M_rd(As_L,fywd,d)
@@ -409,9 +411,6 @@ if __name__ == "__main__" :
    
         
 
-        
-        #### ATTENTION POUR ETRIER ON VA DEVOIR DIVISER AS EN DEUX CAR FCT PREND EN COMPTE SEULEMENT UNE SECTION D'ARMATURE ####
-        
         ## On analyse la resistence des etriers pour la zone au nu de la colonne car effort tranchant plus critique
         d = 1500 - e  # mm
         cot_theta = 2 # inclinaison bielle comprimée
