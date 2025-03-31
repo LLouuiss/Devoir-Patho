@@ -38,7 +38,7 @@ def D_fissure (Dce,w,Smtheta) :
     Dcr = Dcr * 365*24*60*60 # [mm^2/ans]
     return Dce + (w/Smtheta)*Dcr
          
-def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2,plot = False) :
+def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2,plot = False,titre = None) :
     """ Fonction qui calcule la réduction de la section d'armature
         Ns : nombre de barres d'armature
         d0 : diamètre des barres d'armature (mm)
@@ -78,7 +78,8 @@ def As_reduction (Ns,d0,tcarbo,tchlor,t,vcorr1,vcorr2,plot = False) :
         plt.title("Réduction de la section d'armature en fonction du temps")
         plt.legend()
         plt.grid()
-        #plt.savefig("red_section_etrier.pdf")
+        if titre != None :
+            plt.savefig(titre)
         plt.show()
     return As
 
@@ -275,9 +276,9 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
 
 if __name__ == "__main__" :
     """ Données du problème """
-    plot = False 
+    plot = True 
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
-    t = np.linspace(1,1500,1502) # [ans]
+    t = np.linspace(1,300,302) # [ans]
     Clim = 0.4 # [%] concentration limite en chlorures
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
     Dce = 5e-13 # [m^2/s] coefficient de diffusion des chlorures dans le béton non fissuré
@@ -306,8 +307,8 @@ if __name__ == "__main__" :
     
     #enrobage  = np.linspace(50,5,10) # [mm] enrobage
     #enrobage  = np.linspace(80,5,16) # [mm] enrobage
-    enrobage = np.linspace(150,5,30) # [mm] enrobage
-    #enrobage = [50]
+    #enrobage = np.linspace(150,5,30) # [mm] enrobage
+    enrobage = [50]
     solution_M = []
     solution_M_compact = []
     solution_V = []
@@ -324,8 +325,8 @@ if __name__ == "__main__" :
         h2 = 1400 # mm
         b3 = 1400 # mm
         h3 = 300 # mm
-        d = 2000 - e   # mm
-        d_prime = e # mm
+        d = 2000 - 150   # mm
+        d_prime = 150 # mm
         k_t = 0.4 # dans le cas d un chargement de longue durée
         k1 = 0.8 # pour des barres à haute adhérence
         k2 = 0.5 # en flexion simple
@@ -341,8 +342,8 @@ if __name__ == "__main__" :
         w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
         print("w [mm], si <0.3 -> OK = ",w)
         
-        t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w)
-        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0)
+        t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w,True)
+        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0,True)
         
         print("Temps d'initiation de la corrosion : ",min(t_compact_carbo,t_compact_chl,t_fissure_carbo,t_fissure_chl)," ans")
         
@@ -355,17 +356,17 @@ if __name__ == "__main__" :
         Ns_L2 = 9 # nombre de barres d'armature longitudinales
         d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
         
-        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc) # béton compact et fissuré
+        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True,titre="red_section_long_traction.pdf") # béton compact et fissuré
         As_L_compact = As_reduction(Ns_L1,d0_L1,t_compact_carbo,t_compact_chl,t,vcorr_c,vcorr_cc) # béton compact
         #As_L_fissure = As_reduction(Ns_L1,d0_L1,t_fissure_carbo,t_fissure_chl,t,vcorr_c,vcorr_cc) # béton fissuré
         
-        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc) # béton compact et fissuré
+        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True, titre="red_section_long_compression.pdf") # béton compact et fissuré
         As_L2_compact = As_reduction(Ns_L2,d0_L2,t_compact_carbo,t_compact_chl,t,vcorr_c,vcorr_cc) # béton compact
         #As_L2_fissure = As_reduction(Ns_L2,d0_L2,t_fissure_carbo,t_fissure_chl,t,vcorr_c,vcorr_cc) # béton fissuré
         
         Ns_E = 2*2 # 2 etriers de 2 barres
         d0_E = 10 # [mm] diamètre des barres d'armature étriers
-        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc) # béton compact et fissuré
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True,titre="red_section_etrier.pdf") # béton compact et fissuré
         As_E_compact = As_reduction(Ns_E,d0_E,t_compact_carbo,t_compact_chl,t,vcorr_c,vcorr_cc) # béton compact
         #As_E_fissure = As_reduction(Ns_E,d0_E,t_fissure_carbo,t_fissure_chl,t,vcorr_c,vcorr_cc) # béton fissuré
         
@@ -410,7 +411,7 @@ if __name__ == "__main__" :
             plt.title("Moment résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
-            #plt.savefig("moment_resistant_15cm.pdf",bbox_inches='tight')
+            plt.savefig("moment_resistant_5cm.pdf",bbox_inches='tight')
             plt.show()
         # Créer des interpolations linéaires
         f1 = interp1d(t, M_rd_values, kind='linear', fill_value="extrapolate")
@@ -454,7 +455,7 @@ if __name__ == "__main__" :
             plt.title("Effort tranchant résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
-            #plt.savefig("effort_tranchant_15cm.pdf",bbox_inches='tight')
+            plt.savefig("effort_tranchant_5cm.pdf",bbox_inches='tight')
             plt.show()
         # Créer des interpolations linéaires
         f1 = interp1d(t, V_rd_values, kind='linear', fill_value="extrapolate")
