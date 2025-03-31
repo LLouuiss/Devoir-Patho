@@ -95,14 +95,14 @@ def find_ti_carbonatation (K,e,w,plot = False) :
     t_fissure = (e/(50 * np.sqrt(w)))**4 # [ans]
     # Plot
     if plot : 
-        plt.plot(t_compact,x_compact(K,t_compact),'or',markersize = 5,label="Temps d'initiation béton compacte")
+        plt.plot(t_compact,x_compact(K,t_compact),'or',markersize = 5,label="Temps d'initiation béton compact")
         plt.hlines(e,0,max(t),'black',linestyles='dashed')
         plt.vlines(t_compact,0,e,'r',linestyles='dashed')
         plt.text(t_compact,-5,str(int(round(t_compact,0))),color='r')
         plt.plot(t_fissure,x_fissure(w,t_fissure),'ob',markersize = 5,label="Temps d'initiation béton fissuré")
         plt.vlines(t_fissure,0,e,'b',linestyles='dashed')
         plt.text(t_fissure,-5,str(int(round(t_fissure,0))),color='b')
-        plt.plot(t,x_compact(K,t),label="Béton compacte")
+        plt.plot(t,x_compact(K,t),label="Béton compact")
         plt.plot(t,x_fissure(w,t),label="Béton fissuré")
         plt.xlabel("Temps [ans]")
         plt.ylabel("Pénétration de la carbonatation[mm]")
@@ -127,10 +127,10 @@ def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
     t_fissure = (e/(2*np.sqrt(D_fissure(Dce,w,Sm0))* erfinv((Cs-Clim)/Cs)))**2
     # Plot 
     if plot : 
-        plt.plot(t,C(e,Cs,Dce,t),label="Béton compacte")
+        plt.plot(t,C(e,Cs,Dce,t),label="Béton compact")
         plt.plot(t,C(e,Cs,D_fissure(Dce,w,Sm0),t),label="Béton fissuré")
         plt.plot(t,Clim*np.ones(len(t)),'--',color = 'black',label="Limite de concentration du ciment")
-        plt.plot(t_compact,C(e,Cs,Dce,t_compact),'or',markersize = 5,label="Temps d'initiation béton compacte")
+        plt.plot(t_compact,C(e,Cs,Dce,t_compact),'or',markersize = 5,label="Temps d'initiation béton compact")
         plt.vlines(t_compact,0,Clim,'r',linestyles='dashed')
         plt.text(t_compact,-0.003,str(int(round(t_compact,0))),color='r')
         plt.plot(t_fissure,C(e,Cs,D_fissure(Dce,w,Sm0),t_fissure),'ob',markersize = 5,label="Temps d'initiation béton fissuré")
