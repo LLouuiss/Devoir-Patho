@@ -113,31 +113,28 @@ def find_ti_carbonatation (K,e,w,plot = False) :
         plt.legend()
         plt.savefig("carbonatation.pdf")
         plt.show()
+        
         #plot influence Co2
         plt.plot(t_compact,x_compact(K,t_compact),'ob',markersize = 5,label="Temps d'initiation béton compact : K = "  + str(K))
         plt.hlines(e,0,max(t),'black',linestyles='dashed',label="Enrobage")
         plt.vlines(t_compact,0,e,'b',linestyles='dashed')
         plt.text(t_compact,-5,str(int(round(t_compact,0))),color='b')
-
         plt.plot(t_compact_CO2,x_compact(K*2**0.5,t_compact_CO2),'o',markersize = 5, color = 'orange',label="Temps d'initiation béton compact : K = "  + str(9.9))
         plt.hlines(e,0,max(t),'black',linestyles='dashed')
         plt.vlines(t_compact_CO2,0,e,'orange',linestyles='dashed')
         plt.text(t_compact_CO2,-5,str(int(round(t_compact_CO2,0))),color='orange')
-
         plt.plot(t_fissure,x_fissure(w,t_fissure),'og',markersize = 5,label="Temps d'initiation béton fissuré")
         plt.vlines(t_fissure,0,e,'g',linestyles='dashed')
         plt.text(t_fissure,-5,str(int(round(t_fissure,0))),color='g')
-
         plt.plot(t,x_compact(K,t),label="Béton compact : K = "  + str(K))
         plt.plot(t,x_compact(K*2**0.5,t),label="Béton compact : K = "  + str(9.9))
         plt.plot(t,x_fissure(w,t),label="Béton fissuré")
-        
         plt.xlabel("Temps [ans]")
         plt.ylabel("Pénétration de la carbonatation[mm]")
         plt.title("Pénétration de la carbonatation en fonction du temps")
         plt.grid()
         plt.legend()
-        plt.savefig("carbonatation.pdf")
+        plt.savefig("carbonatation_CO2.pdf")
         plt.show()
     
     return t_compact, t_fissure
