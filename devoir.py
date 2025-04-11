@@ -285,7 +285,7 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
     
     # Espacement des fissures (approximé selon des formules usuelles)
     s_r_max = 3.4*c + 0.425*k1*k2*phi/rho_seff  # Approche simplifiée (mm)
-    print("s_r_max = ",s_r_max)
+    #print("s_r_max = ",s_r_max)
     # Ouverture des fissures
     w_k = s_r_max * epsilon_sm_cm  # mm
     if print_values :
@@ -366,7 +366,6 @@ if __name__ == "__main__" :
         y_G_II, I_II = calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, A_s, A_s_prime, alpha_e)
         phi = 32 # mm diamètre des armatures en traction        
         w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
-        print("w [mm], si <0.3 -> OK = ",w)
         
         t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w,False)
         t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0,False)
@@ -403,6 +402,8 @@ if __name__ == "__main__" :
         print("-----Sans non linéarité de la réduction de la section d'armature----")
         print("t chlorure compact = ",t_compact_chl)
         print("t chlorure fissure = ",t_fissure_chl)
+        print("s_r_max = ",Sm0)
+        print("w [mm], si <0.3 -> OK = ",w)
         temps_cl_L.append(min(t_compact_chl,t_fissure_chl))
         
         # Non linéarité de la réduction de la section d'armature
@@ -414,9 +415,9 @@ if __name__ == "__main__" :
                 if t[i] > t0 and t[i] < min(t_compact_chl,t_fissure_chl) : 
                     y_G_II, I_II = calcul_caracteristiques_section_fissuree(b1, h1,b2,h2, d, d_prime, As_L[i], As_L2[i], alpha_e)
                     phi = np.sqrt(4*As_L[i]/(np.pi*Ns_L1)) # [mm] diamètre des armatures en traction
-                    print("phi = ",phi)
-                    w, sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, As_L[i], b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
-                    t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,sm0)
+                    #print("phi = ",phi)
+                    w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, As_L[i], b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
+                    t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0)
                     As_L[i:] = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
                     As_L2[i:] = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_fissure_chl,t_compact_chl),t,vcorr_c,vcorr_cc)[i:]
                     As_E[i:] = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc)[i:]
@@ -426,6 +427,8 @@ if __name__ == "__main__" :
         print("-----Avec non linéarité de la réduction de la section d'armature----")
         print("t chlorure compact = ",t_compact_chl)
         print("t chlorure fissure = ",t_fissure_chl)
+        print("w [mm], si <0.3 -> OK = ",w)
+        print("s_r_max = ",Sm0)
         temps_cl_NL.append(min(t_compact_chl,t_fissure_chl))
 
         
