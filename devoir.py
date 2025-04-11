@@ -111,7 +111,7 @@ def find_ti_carbonatation (K,e,w,plot = False) :
         plt.title("Pénétration de la carbonatation en fonction du temps")
         plt.grid()
         plt.legend()
-        plt.savefig("carbonatation.pdf")
+        plt.savefig("figures/carbonatation.pdf")
         plt.show()
         
         #plot influence Co2
@@ -134,7 +134,7 @@ def find_ti_carbonatation (K,e,w,plot = False) :
         plt.title("Pénétration de la carbonatation en fonction du temps")
         plt.grid()
         plt.legend()
-        plt.savefig("carbonatation_CO2.pdf")
+        plt.savefig("figures/carbonatation_CO2.pdf")
         plt.show()
     
     return t_compact, t_fissure
@@ -166,7 +166,7 @@ def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
         plt.title("Concentration en chlorures en fonction du temps")
         plt.grid()
         plt.legend()
-        plt.savefig("chlorure.pdf")
+        plt.savefig("figures/chlorure.pdf")
         plt.show()
     
     
@@ -301,7 +301,7 @@ def calcul_ouverture_fissures(M_II, d, x, I_II, A_s, b, h, E_s, alpha_e, k_t, f_
 
 if __name__ == "__main__" :
     """ Données du problème """
-    plot = True 
+    plot = False   
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
     t = np.linspace(1,300,302) # [ans]
     Clim = 0.4 # [%] concentration limite en chlorures
@@ -335,11 +335,13 @@ if __name__ == "__main__" :
     #enrobage = np.linspace(150,5,30) # [mm] enrobage
     enrobage = [50]
     solution_M = []
+    solution_M_NL = []
     solution_M_compact = []
     solution_V = []
+    solution_V_NL = []
     solution_V_compact = []
-    lineaire = ()
-    non_lineaire = ()
+    temps_cl_NL = []
+    temps_cl_L = []
     for i in enrobage :
         print("Enrobage = ",i)
         e = i # [mm] enrobage
@@ -356,8 +358,7 @@ if __name__ == "__main__" :
         k1 = 0.8 # pour des barres à haute adhérence
         k2 = 0.5 # en flexion simple
 
-        
-        
+
         A_s =  28 * 32**2 * np.pi/4 # mm^2 28phi32 en traction
         A_s_prime = 9 * 25**2 * np.pi/4  # mm^2 9phi25 en compression
         
@@ -367,8 +368,8 @@ if __name__ == "__main__" :
         w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
         print("w [mm], si <0.3 -> OK = ",w)
         
-        t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w,True)
-        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0,True)
+        t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w,False)
+        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0,False)
         
         print("Temps d'initiation de la corrosion : ",min(t_compact_carbo,t_compact_chl,t_fissure_carbo,t_fissure_chl)," ans")
         
@@ -381,28 +382,31 @@ if __name__ == "__main__" :
         Ns_L2 = 9 # nombre de barres d'armature longitudinales
         d0_L2 = 25 # [mm] diamètre des barres d'armature longitudinales en compression
         
-        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True,titre="red_section_long_traction.pdf") # béton compact et fissuré
+        As_L = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,False,titre="figures/red_section_long_traction.pdf") # béton compact et fissuré
+        As_L_linear = As_reduction(Ns_L1,d0_L1,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc) # béton compact et fissuré
         As_L_compact = As_reduction(Ns_L1,d0_L1,t_compact_carbo,t_compact_chl,t,vcorr_c,vcorr_cc) # béton compact
         #As_L_fissure = As_reduction(Ns_L1,d0_L1,t_fissure_carbo,t_fissure_chl,t,vcorr_c,vcorr_cc) # béton fissuré
         
-        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True, titre="red_section_long_compression.pdf") # béton compact et fissuré
+        As_L2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,False, titre="figures/red_section_long_compression.pdf") # béton compact et fissuré
+        As_L_linear2 = As_reduction(Ns_L2,d0_L2,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc) # béton compact et fissuré
         As_L2_compact = As_reduction(Ns_L2,d0_L2,t_compact_carbo,t_compact_chl,t,vcorr_c,vcorr_cc) # béton compact
         #As_L2_fissure = As_reduction(Ns_L2,d0_L2,t_fissure_carbo,t_fissure_chl,t,vcorr_c,vcorr_cc) # béton fissuré
         
         Ns_E = 2*2 # 2 etriers de 2 barres
         d0_E = 10 # [mm] diamètre des barres d'armature étriers
-        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,True,titre="red_section_etrier.pdf") # béton compact et fissuré
+        As_E = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc,False,titre="figures/red_section_etrier.pdf") # béton compact et fissuré
+        As_E_linear = As_reduction(Ns_E,d0_E,min(t_compact_carbo,t_fissure_carbo),min(t_compact_chl,t_fissure_chl),t,vcorr_c,vcorr_cc) # béton compact et fissuré
         As_E_compact = As_reduction(Ns_E,d0_E,t_compact_carbo,t_compact_chl,t,vcorr_c,vcorr_cc) # béton compact
         #As_E_fissure = As_reduction(Ns_E,d0_E,t_fissure_carbo,t_fissure_chl,t,vcorr_c,vcorr_cc) # béton fissuré
-        
-        lineaire = (As_L,As_L2,As_E)
+
         
         print("-----Sans non linéarité de la réduction de la section d'armature----")
         print("t chlorure compact = ",t_compact_chl)
         print("t chlorure fissure = ",t_fissure_chl)
+        temps_cl_L.append(min(t_compact_chl,t_fissure_chl))
         
         # Non linéarité de la réduction de la section d'armature
-        NL = False 
+        NL = True 
         if NL :
             for i in range(len(t)) :
                 if t[i] <= t0 :
@@ -422,10 +426,10 @@ if __name__ == "__main__" :
         print("-----Avec non linéarité de la réduction de la section d'armature----")
         print("t chlorure compact = ",t_compact_chl)
         print("t chlorure fissure = ",t_fissure_chl)
-        
-        non_lineaire = (As_L,As_L2,As_E)
+        temps_cl_NL.append(min(t_compact_chl,t_fissure_chl))
 
-            
+        
+        
         M_rd_values = M_rd(As_L,fywd,d) # [Nmm]
         M_rd_values_compact = M_rd(As_L_compact,fywd,d) # [Nmm]
         if plot :
@@ -436,32 +440,39 @@ if __name__ == "__main__" :
             plt.title("Moment résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
-            plt.savefig("moment_resistant_5cm.pdf",bbox_inches='tight')
+            plt.savefig("figures/moment_resistant_5cm.pdf",bbox_inches='tight')
             plt.show()
         # Créer des interpolations linéaires
         f1 = interp1d(t, M_rd_values, kind='linear', fill_value="extrapolate")
         f2 = interp1d(t, M*np.ones(len(t)), kind='linear', fill_value="extrapolate")
-
         # Trouver l'intersection numériquement
         x_guess = min(t_fissure_chl,t_compact_chl) + 10  # Estimation initiale de l'intersection
         x_intersection = fsolve(find_intersection, x_guess)[0]
         y_intersection = f1(x_intersection)
-
         # Afficher les coordonnées d'intersection
-        print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
+        print(f"Rupture M  = {x_intersection:.4f} ans ")
         solution_M.append(x_intersection)
         
         ### ----- Compact ----
-        # Créer des interpolations linéaires
         f1 = interp1d(t, M_rd_values_compact, kind='linear', fill_value="extrapolate")
         f2 = interp1d(t, M*np.ones(len(t)), kind='linear', fill_value="extrapolate")
-        # Trouver l'intersection numériquement
         x_guess = t_compact_chl + 10  # Estimation initiale de l'intersection
         x_intersection = fsolve(find_intersection, x_guess)[0]
         y_intersection = f1(x_intersection)
-        # Afficher les coordonnées d'intersection
-        print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
+        print(f"Rupture M compact = {x_intersection:.4f} ans")
         solution_M_compact.append(x_intersection)
+        
+        ## ---- Non linéarité : cas linéaire----
+        if NL : 
+            M_NL = M_rd(As_L_linear,fywd,d)
+            f1 = interp1d(t, M_NL, kind='linear', fill_value="extrapolate")
+            f2 = interp1d(t, M*np.ones(len(t)), kind='linear', fill_value="extrapolate")
+            x_guess = min(t_fissure_chl,t_compact_chl) + 10   # Estimation initiale de l'intersection
+            x_intersection = fsolve(find_intersection, x_guess)[0]
+            y_intersection = f1(x_intersection)
+            print(f"Rupture M lineaire = {x_intersection:.4f} ans")
+            solution_M_NL.append(x_intersection)
+            
    
         
 
@@ -480,33 +491,39 @@ if __name__ == "__main__" :
             plt.title("Effort tranchant résistant en fonction du temps pour un enrobage de " + str(e) + " mm")
             plt.legend()
             plt.grid()
-            plt.savefig("effort_tranchant_5cm.pdf",bbox_inches='tight')
+            plt.savefig("figures/effort_tranchant_5cm.pdf",bbox_inches='tight')
             plt.show()
-        # Créer des interpolations linéaires
         f1 = interp1d(t, V_rd_values, kind='linear', fill_value="extrapolate")
         f2 = interp1d(t, V*np.ones(len(t)), kind='linear', fill_value="extrapolate")
-
-        # Trouver l'intersection numériquement
         x_guess = min(t_fissure_chl,t_compact_chl) + 30  # Estimation initiale de l'intersection
         x_intersection = fsolve(find_intersection, x_guess)[0]
         y_intersection = f1(x_intersection)
-
-        # Afficher les coordonnées d'intersection
-        print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
+        print(f"Rupture V = {x_intersection:.4f} ans")
         solution_V.append(x_intersection)
         
         ### ----- Compact ----
-        # Créer des interpolations linéaires
         f1 = interp1d(t, V_rd_values_compact, kind='linear', fill_value="extrapolate")
         f2 = interp1d(t, V*np.ones(len(t)), kind='linear', fill_value="extrapolate")
-        # Trouver l'intersection numériquement
         x_guess = t_compact_chl + 30  # Estimation initiale de l'intersection
         x_intersection = fsolve(find_intersection, x_guess)[0]
         y_intersection = f1(x_intersection)
-        # Afficher les coordonnées d'intersection
-        print(f"Intersection trouvée à x = {x_intersection:.4f}, y = {y_intersection:.4f}")
+        print(f"Rupture V compact= {x_intersection:.4f} ans")
         solution_V_compact.append(x_intersection)
+        
+        ### ---- Non linéarité : cas linéaire----
+        if NL :
+            V_NL = V_rd(As_E_linear/0.11,fywd,d*10**-3,cot_theta)
+            f1 = interp1d(t, V_NL, kind='linear', fill_value="extrapolate")
+            f2 = interp1d(t, V*np.ones(len(t)), kind='linear', fill_value="extrapolate")
+            x_guess = min(t_fissure_chl,t_compact_chl) + 30  # Estimation initiale de l'intersection
+            x_intersection = fsolve(find_intersection, x_guess)[0]
+            y_intersection = f1(x_intersection)
+            print(f"Rupture V linéaire {x_intersection:.4f} ans")
+            solution_V_NL.append(x_intersection)
             
+        
+        
+        
     
     
     # Plot évolutions temps avant rupture en fonction de l'enrobage
@@ -517,7 +534,7 @@ if __name__ == "__main__" :
     plt.title("Temps avant la rupture en fonction de l'enrobage")
     plt.legend()
     plt.grid()
-    plt.savefig("temps_avant_rupture.pdf",bbox_inches='tight')
+    #plt.savefig("figures/temps_avant_rupture.pdf",bbox_inches='tight')
     plt.show()
     
     # Rupture moment en fonction enrobage béton fissuré et compact
@@ -528,7 +545,7 @@ if __name__ == "__main__" :
     plt.title("Temps avant la rupture en fonction de l'enrobage")
     plt.legend()
     plt.grid()
-    plt.savefig("M_fissure_compact.pdf",bbox_inches='tight')
+    #plt.savefig("figures/M_fissure_compact.pdf",bbox_inches='tight')
     plt.show()
     
     # Rupture effort tranchant en fonction enrobage béton fissuré et compact
@@ -539,21 +556,49 @@ if __name__ == "__main__" :
     plt.title("Temps avant la rupture en fonction de l'enrobage")
     plt.legend()
     plt.grid()
-    plt.savefig("V_fissure_compact.pdf",bbox_inches='tight')
+    #plt.savefig("figures/V_fissure_compact.pdf",bbox_inches='tight')
     plt.show()
     
+    if NL : 
+        # Différence temps de rupture
+        difference_M = np.array(solution_M) - np.array(solution_M_NL)
+        difference_V = np.array(solution_V) - np.array(solution_V_NL)
+        difference_t_cl = np.array(temps_cl_NL) - np.array(temps_cl_L)
+        
+        
+        # Non linéarité impact enrobage - temps de rupture 
+        fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+
+        # Plot for Initiation corrosion by chlorides
+        axs[0].plot(enrobage, difference_t_cl, label="Initiation corrosion par chlorure")
+        axs[0].set_xlabel("Enrobage [mm]")
+        axs[0].set_ylabel("Différence temps [ans]")
+        axs[0].legend()
+        axs[0].grid()
+        axs[0].set_title("Initiation corrosion par chlorure")
+
+        # Plot for Rupture by flexion
+        axs[1].plot(enrobage, difference_M, label="Rupture par flexion")
+        axs[1].set_xlabel("Enrobage [mm]")
+        axs[1].set_ylabel("Différence temps rupture [ans]")
+        axs[1].legend()
+        axs[1].grid()
+        axs[1].set_title("Rupture par flexion")
+
+        # Plot for Rupture by shear force
+        axs[2].plot(enrobage, difference_V, label="Rupture par effort tranchant")
+        axs[2].set_xlabel("Enrobage [mm]")
+        axs[2].set_ylabel("Différence temps rupture [ans]")
+        axs[2].legend()
+        axs[2].grid()
+        axs[2].set_title("Rupture par effort tranchant")
+
+        plt.tight_layout()
+        #plt.savefig("figures/comparison_NL.pdf", bbox_inches='tight')
+        plt.show()
+        
     
-    
-    
-    # Non linéarité de la réduction de la section d'armature
-    plt.plot(t,non_lineaire[0],label="Section d'armature longitudinale")
-    plt.plot(t,lineaire[0],label="Section d'armature longitudinale linéaire")
-    plt.xlabel("Temps [ans]")
-    plt.ylabel("Section d'armature [mm^2]")
-    plt.title("Réduction de la section d'armature longitudinale en fonction du temps")
-    plt.legend()
-    plt.grid()
-    plt.show()
+
     
     
     
