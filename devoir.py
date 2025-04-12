@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.optimize import fsolve
 
+from deuxD import calcul_2D
 
 def find_intersection(x):
     """ Fonction qui trouve l'intersection de deux fonctions"""
@@ -139,7 +140,7 @@ def find_ti_carbonatation (K,e,w,plot = False) :
     
     return t_compact, t_fissure
     
-def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
+def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False,deux_D = False) :
     """ Fonction qui trouve temps d'initiation de la corrosion par les chlorures
     e : enrobage (mm)
     Dce : coefficient de diffusion des chlorures (mm^2/ans)
@@ -152,8 +153,10 @@ def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
     t_fissure = (e/(2*np.sqrt(D_fissure(Dce,w,Sm0))* erfinv((Cs-Clim)/Cs)))**2
     # Plot 
     if plot : 
-        plt.plot(t,C(e,Cs,Dce,t),label="Béton compact")
-        plt.plot(t,C(e,Cs,D_fissure(Dce,w,Sm0),t),label="Béton fissuré")
+        if deux_D : 
+            calcul_2D()
+        plt.plot(t,C(e,Cs,Dce,t),label="1D : Béton compact")
+        plt.plot(t,C(e,Cs,D_fissure(Dce,w,Sm0),t),label="1D : Béton fissuré")
         plt.plot(t,Clim*np.ones(len(t)),'--',color = 'black',label="Limite de concentration du ciment")
         plt.plot(t_compact,C(e,Cs,Dce,t_compact),'or',markersize = 5,label="Temps d'initiation béton compact")
         plt.vlines(t_compact,0,Clim,'r',linestyles='dashed')
@@ -165,9 +168,10 @@ def find_ti_chlorure (e,Dce,Clim,Cs,w,Sm0,plot =  False) :
         plt.ylabel("Concentration en chlorures [%]")
         plt.title("Concentration en chlorures en fonction du temps")
         plt.grid()
-        plt.legend()
-        plt.savefig("figures/chlorure.pdf")
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=10)
+        plt.savefig("figures/chlorure_2D.pdf",bbox_inches='tight')
         plt.show()
+    
     
     
     return t_compact, t_fissure
@@ -303,7 +307,7 @@ if __name__ == "__main__" :
     """ Données du problème """
     plot = False   
     K = 7 #[mm/sqrt(ans)] coefficient de diffusion de la carbonatation
-    t = np.linspace(1,300,302) # [ans]
+    t = np.linspace(1,150,152) # [ans]
     Clim = 0.4 # [%] concentration limite en chlorures
     Clim = Clim  * 0.15 # [%] car dans le béton C40 y a 15% de ciment
     Dce = 5e-13 # [m^2/s] coefficient de diffusion des chlorures dans le béton non fissuré
@@ -368,7 +372,7 @@ if __name__ == "__main__" :
         w, Sm0 = calcul_ouverture_fissures(M, d, y_G_II, I_II, A_s, b3, h1+h2+h3, E_s, alpha_e,k_t,f_ctm,e,k1,k2,phi)
         
         t_compact_carbo, t_fissure_carbo = find_ti_carbonatation(K,e,w,False)
-        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0,False)
+        t_compact_chl, t_fissure_chl = find_ti_chlorure(e,Dce,Clim,Cs,w,Sm0,True,True)
         
         print("Temps d'initiation de la corrosion : ",min(t_compact_carbo,t_compact_chl,t_fissure_carbo,t_fissure_chl)," ans")
         
@@ -407,7 +411,7 @@ if __name__ == "__main__" :
         temps_cl_L.append(min(t_compact_chl,t_fissure_chl))
         
         # Non linéarité de la réduction de la section d'armature
-        NL = True 
+        NL = False 
         if NL :
             for i in range(len(t)) :
                 if t[i] <= t0 :
