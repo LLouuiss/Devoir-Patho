@@ -1,4 +1,9 @@
-"""Implémentation des automates cellulaires de la diffusion 2D"""
+""" Implémentation des automates cellulaires de la diffusion 2D
+    
+Le code a été repris et adapté à notre géométrie à partir du mémoire de fin
+d’étude "Méthode d’évaluation numérique de la diffusion du chlore à l’intérieur du béton armé" de Arthur Herbiet.
+
+"""
 #Import
 import numpy as np
 import math
